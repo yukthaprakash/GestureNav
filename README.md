@@ -42,6 +42,10 @@ Every demo section also has visible buttons, and **Arrow Up/Down/Left/Right alwa
 
 Choose **Calibrate my gestures** during startup to capture three comfortable samples for pinch, open palm, swipe travel, arm raise, and head tilt. The resulting threshold profile is saved only in this browser under `localStorage`; **Reset to defaults** removes it. During a session, sustained low hand confidence can slightly loosen sensitivity, and the app suggests arm or head gestures when those modalities are working better than hand tracking.
 
+## Gesture Macros
+
+After starting the camera, choose **Manage gesture macros** to create a personal two-step shortcut. Select any two gestures, choose an existing action, and save it. Perform the first gesture followed by the second within 2.5 seconds; GestureNav shows the recognition step and then runs the assigned action. Macros are stored locally in this browser and can be deleted individually.
+
 ## Privacy and Device Support
 
 - Camera processing is local to the browser using MediaPipe Tasks Vision.

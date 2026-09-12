@@ -192,14 +192,14 @@ export function useMultiTracking(
             ? faceLandmarker?.detectForVideo(currentVideo, timestamp)
             : undefined
 
-          if (hands.includes('open-palm')) emit({ action: 'scroll-down', source: 'hand', label: 'Open palm: scroll down', timestamp })
-          if (hands.includes('fist')) emit({ action: 'scroll-up', source: 'hand', label: 'Fist: scroll up', timestamp })
-          if (hands.includes('pinch')) emit({ action: 'select', source: 'hand', label: 'Pinch: select', timestamp })
+          if (hands.includes('open-palm')) emit({ action: 'scroll-down', source: 'hand', label: 'Open palm: scroll down', gesture: 'open-palm', timestamp })
+          if (hands.includes('fist')) emit({ action: 'scroll-up', source: 'hand', label: 'Fist: scroll up', gesture: 'fist', timestamp })
+          if (hands.includes('pinch')) emit({ action: 'select', source: 'hand', label: 'Pinch: select', gesture: 'pinch', timestamp })
           const swipe = handLandmarks?.[0]
             ? swipeDetector.update(handLandmarks[0].x, timestamp)
             : null
-          if (swipe === 'swipe-left') emit({ action: 'next-section', source: 'hand', label: 'Swipe left', timestamp })
-          if (swipe === 'swipe-right') emit({ action: 'previous-section', source: 'hand', label: 'Swipe right', timestamp })
+          if (swipe === 'swipe-left') emit({ action: 'next-section', source: 'hand', label: 'Swipe left', gesture: 'swipe-left', timestamp })
+          if (swipe === 'swipe-right') emit({ action: 'previous-section', source: 'hand', label: 'Swipe right', gesture: 'swipe-right', timestamp })
 
           const pose = poseResult?.landmarks[0] ? classifyPoseGesture(poseResult.landmarks[0], effectiveProfile.raiseThreshold) : snapshot.pose
           const faceLandmarks = faceResult?.faceLandmarks[0]
@@ -255,10 +255,10 @@ export function useMultiTracking(
             setStatus('ready')
           }
 
-          if (!isPaused && pose === 'left-arm-raised') emit({ action: 'previous-section', source: 'pose', label: 'Left arm raised', timestamp })
-          if (!isPaused && pose === 'right-arm-raised') emit({ action: 'next-section', source: 'pose', label: 'Right arm raised', timestamp })
-          if (!isPaused && face === 'tilt-left') emit({ action: 'scroll-up', source: 'face', label: 'Head tilted left', timestamp })
-          if (!isPaused && face === 'tilt-right') emit({ action: 'scroll-down', source: 'face', label: 'Head tilted right', timestamp })
+          if (!isPaused && pose === 'left-arm-raised') emit({ action: 'previous-section', source: 'pose', label: 'Left arm raised', gesture: 'left-arm-raised', timestamp })
+          if (!isPaused && pose === 'right-arm-raised') emit({ action: 'next-section', source: 'pose', label: 'Right arm raised', gesture: 'right-arm-raised', timestamp })
+          if (!isPaused && face === 'tilt-left') emit({ action: 'scroll-up', source: 'face', label: 'Head tilted left', gesture: 'tilt-left', timestamp })
+          if (!isPaused && face === 'tilt-right') emit({ action: 'scroll-down', source: 'face', label: 'Head tilted right', gesture: 'tilt-right', timestamp })
 
           setSnapshot({ hands, pose, face, isPaused })
           frameCount += 1
