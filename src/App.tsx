@@ -9,6 +9,7 @@ import type { ActionType, GestureEvent } from './lib/types'
 
 function App() {
   const [started, setStarted] = useState(false)
+  const [cameraEnabled, setCameraEnabled] = useState(true)
   const [lastEvent, setLastEvent] = useState<GestureEvent | null>(null)
   const [isMobile] = useState(() => window.matchMedia('(max-width: 760px)').matches || navigator.maxTouchPoints > 1)
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -43,7 +44,7 @@ function App() {
     performAction(event.action)
   }
 
-  const { status, error, snapshot } = useMultiTracking(videoRef, handleGesture, started)
+  const { status, error, snapshot } = useMultiTracking(videoRef, handleGesture, started && cameraEnabled)
 
   const onAction = (action: 'scroll-up' | 'scroll-down' | 'select') => {
     performAction(action)
@@ -77,10 +78,10 @@ function App() {
     <div className="app-shell">
       <header className="site-header">
         <a className="wordmark" href="#top" aria-label="GestureNav home">Gesture<span>Nav</span></a>
-        <div className="header-status"><span className="status-dot" />{started ? status : 'camera off'}</div>
+        <div className="header-status"><span className="status-dot" />{started && cameraEnabled ? status : 'camera off'}</div>
       </header>
       <div id="top" className="top-grid">
-        {!started ? <Onboarding onStart={() => setStarted(true)} error={error} isMobile={isMobile} /> : (
+        {!started ? <Onboarding onStart={() => { setCameraEnabled(true); setStarted(true) }} error={error} isMobile={isMobile} /> : (
           <section className="active-console" aria-labelledby="console-title">
             <div>
               <p className="kicker">Control surface</p>
@@ -90,7 +91,14 @@ function App() {
               {error && <button className="secondary-button" type="button" onClick={() => setStarted(false)}>Return to camera setup</button>}
               {lastEvent && <p className="last-action" aria-live="polite">Last action: <strong>{lastEvent.label}</strong></p>}
             </div>
-            <GestureOverlay videoRef={videoRef} snapshot={snapshot} status={status} debug={debug} />
+            <GestureOverlay
+              videoRef={videoRef}
+              snapshot={snapshot}
+              status={status}
+              debug={debug}
+              cameraEnabled={cameraEnabled}
+              onToggleCamera={() => setCameraEnabled((enabled) => !enabled)}
+            />
           </section>
         )}
       </div>

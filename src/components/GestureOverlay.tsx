@@ -7,9 +7,11 @@ type GestureOverlayProps = {
   snapshot: TrackingSnapshot
   status: TrackingStatus
   debug: boolean
+  cameraEnabled: boolean
+  onToggleCamera: () => void
 }
 
-export function GestureOverlay({ videoRef, snapshot, status, debug }: GestureOverlayProps) {
+export function GestureOverlay({ videoRef, snapshot, status, debug, cameraEnabled, onToggleCamera }: GestureOverlayProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -34,8 +36,14 @@ export function GestureOverlay({ videoRef, snapshot, status, debug }: GestureOve
   return (
     <div className="tracking-card">
       <div className="video-frame">
-        <video ref={videoRef} autoPlay muted playsInline aria-label="Live camera preview" />
-        {debug && <canvas ref={canvasRef} className="debug-canvas" aria-hidden="true" />}
+        {cameraEnabled ? <video ref={videoRef} autoPlay muted playsInline aria-label="Live camera preview" /> : (
+          <div className="camera-off-placeholder" role="status">
+            <span className="camera-off-icon" aria-hidden="true">◌</span>
+            <strong>Camera off</strong>
+            <span>Keyboard arrows still work</span>
+          </div>
+        )}
+        {cameraEnabled && debug && <canvas ref={canvasRef} className="debug-canvas" aria-hidden="true" />}
         <div className="tracking-badge" data-status={status}>
           <span className="status-dot" aria-hidden="true" />
           {stateLabel}
@@ -45,6 +53,9 @@ export function GestureOverlay({ videoRef, snapshot, status, debug }: GestureOve
         <span>Hands: {snapshot.hands.length ? snapshot.hands.join(', ') : 'not detected'}</span>
         <span>Pose: {snapshot.pose === 'none' ? 'neutral' : snapshot.pose}</span>
         <span>Face: {snapshot.face === 'none' ? 'neutral' : snapshot.face}</span>
+        <button className="camera-toggle" type="button" onClick={onToggleCamera} aria-pressed={cameraEnabled}>
+          {cameraEnabled ? 'Turn camera off' : 'Turn camera on'}
+        </button>
       </div>
     </div>
   )
