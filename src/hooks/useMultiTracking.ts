@@ -41,7 +41,6 @@ export function useMultiTracking(
   const [status, setStatus] = useState<TrackingStatus>('idle')
   const [error, setError] = useState<string | null>(null)
   const [snapshot, setSnapshot] = useState<TrackingSnapshot>(INITIAL_SNAPSHOT)
-  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null)
   const callbackRef = useRef(onGesture)
   const lastGestureRef = useRef<{ action: string; timestamp: number } | null>(null)
   const lookAwayStartedRef = useRef<number | null>(null)
@@ -88,7 +87,17 @@ export function useMultiTracking(
           stream.getTracks().forEach((track) => track.stop())
           return
         }
-        setCameraStream(stream)
+        const videoTrack = stream.getVideoTracks()[0]
+        videoTrack?.addEventListener('ended', () => {
+          if (cancelled) return
+          setError('Camera access ended. Use the keyboard arrows, or reconnect your camera and try again.')
+          setStatus('error')
+          cancelled = true
+          cancelAnimationFrame(animationFrame)
+          handLandmarker?.close()
+          poseLandmarker?.close()
+          faceLandmarker?.close()
+        }, { once: true })
         const video = videoRef.current
         if (!video) throw new Error('Camera preview is unavailable.')
         video.srcObject = stream
@@ -112,7 +121,12 @@ export function useMultiTracking(
             numFaces: 1,
           }),
         ])
-        if (cancelled) return
+        if (cancelled) {
+          handLandmarker?.close()
+          poseLandmarker?.close()
+          faceLandmarker?.close()
+          return
+        }
         setStatus('ready')
 
         let frameCount = 0
@@ -170,7 +184,11 @@ export function useMultiTracking(
       } catch (cause) {
         if (cancelled) return
         const message = cause instanceof DOMException && cause.name === 'NotAllowedError'
-          ? 'Camera access was denied. Allow camera access in your browser settings to use gesture navigation.'
+          ? 'Camera access was denied. You can still use the keyboard arrows, or allow camera access and try again.'
+          : cause instanceof DOMException && cause.name === 'NotFoundError'
+            ? 'No camera was detected. Use the keyboard arrows, or connect a webcam to try gesture navigation.'
+            : cause instanceof DOMException && cause.name === 'SecurityError'
+              ? 'Camera access requires HTTPS or localhost. Open the deployed site over HTTPS, then try again.'
           : cause instanceof Error ? cause.message : 'Unable to start gesture tracking.'
         setError(message)
         setStatus('error')
@@ -185,9 +203,8 @@ export function useMultiTracking(
       handLandmarker?.close()
       poseLandmarker?.close()
       faceLandmarker?.close()
-      setCameraStream(null)
     }
   }, [enabled, videoRef])
 
-  return { status, error, snapshot, cameraStream }
+  return { status, error, snapshot }
 }

@@ -24,12 +24,15 @@
 h1, h2 { color: #252525; font-family: var(--display); letter-spacing: -.045em; line-height: .95; }
 h1 { font-size: clamp(3.5rem, 8vw, 8.2rem); margin: 0 0 28px; max-width: 850px; }
 .lede { font-size: 1.15rem; line-height: 1.45; max-width: 570px; }
+.device-note { border-left: 3px solid #e96b4d; font-size: .9rem; line-height: 1.45; margin-top: 25px; max-width: 520px; padding-left: 14px; }
 .onboarding-actions { align-items: start; display: flex; flex-direction: column; gap: 15px; margin-top: 40px; }
 .primary-button { background: #252525; border: 1px solid #252525; color: #f2f0e9; cursor: pointer; font: 700 .95rem var(--mono); padding: 16px 22px; transition: background .2s, color .2s; }
 .primary-button:hover, .primary-button:focus-visible { background: #a9e66f; color: #252525; }
+.secondary-button { background: transparent; border: 1px solid #252525; color: #252525; cursor: pointer; font: .72rem var(--mono); margin-top: 22px; padding: 12px 14px; }
+.secondary-button:hover, .secondary-button:focus-visible { background: #252525; color: #f2f0e9; }
 .privacy-note { color: #6c6b65; font-size: .8rem; max-width: 330px; }
 .gesture-guide { border-left: 1px solid #252525; display: grid; gap: 0; }
-.gesture-guide div { border-bottom: 1px solid #252525; display: grid; gap: 8px; padding: 20px 0 20px 28px; }
+.gesture-guide div { border-bottom: 1px solid #252525; display: grid; gap: 8px; padding: 15px 0 15px 28px; }
 .gesture-guide div:first-child { border-top: 1px solid #252525; }
 .gesture-guide strong { font-family: var(--display); font-size: 1.5rem; }
 .gesture-guide span { color: #6c6b65; font-size: .85rem; }
@@ -57,7 +60,9 @@ h1 { font-size: clamp(3.5rem, 8vw, 8.2rem); margin: 0 0 28px; max-width: 850px; 
 .accent-blue { background: #bfd9e7; }
 .accent-yellow { background: #f5e7a2; }
 .accent-white { background: #fffdf8; }
-.site-footer { font: .7rem var(--mono); margin: 0 auto; max-width: 1400px; padding: 25px 5vw 40px; text-transform: uppercase; }
+.site-footer { align-items: end; display: flex; font: .7rem var(--mono); gap: 30px; justify-content: space-between; margin: 0 auto; max-width: 1400px; padding: 25px 5vw 40px; text-transform: uppercase; }
+.site-footer div { display: grid; gap: 8px; max-width: 650px; }
+.site-footer div span { color: #6c6b65; line-height: 1.5; text-transform: none; }
 .site-footer a { color: inherit; }
 
 @media (max-width: 760px) {
@@ -66,6 +71,7 @@ h1 { font-size: clamp(3.5rem, 8vw, 8.2rem); margin: 0 0 28px; max-width: 850px; 
   h1 { font-size: clamp(3rem, 16vw, 5.5rem); }
   .gesture-guide { border-left: 0; width: 100%; }
   .gesture-guide div { padding-left: 0; }
+  .site-footer { align-items: start; flex-direction: column; }
   .demo-section { min-height: 78vh; padding-bottom: 60px; padding-top: 60px; }
   .section-copy h2 { font-size: clamp(2.8rem, 14vw, 5rem); }
   .section-controls { align-self: stretch; flex-direction: row; }
