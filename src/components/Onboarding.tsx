@@ -1,10 +1,11 @@
 type OnboardingProps = {
   onStart: () => void
+  onCalibrate: () => void
   error: string | null
   isMobile: boolean
 }
 
-export function Onboarding({ onStart, error, isMobile }: OnboardingProps) {
+export function Onboarding({ onStart, onCalibrate, error, isMobile }: OnboardingProps) {
   return (
     <section className="onboarding" aria-labelledby="welcome-title">
       <div className="onboarding-copy">
@@ -15,7 +16,10 @@ export function Onboarding({ onStart, error, isMobile }: OnboardingProps) {
         </p>
         {isMobile && <p className="device-note"><strong>Best viewed on desktop.</strong> A larger screen and webcam make the gestures easier to use. Keyboard navigation works on every device.</p>}
         <div className="onboarding-actions">
-          {!isMobile && <button className="primary-button" type="button" onClick={onStart}>Enable camera and begin</button>}
+          {!isMobile && <>
+            <button className="primary-button" type="button" onClick={onStart}>Enable camera and begin</button>
+            <button className="secondary-button" type="button" onClick={onCalibrate}>Calibrate my gestures</button>
+          </>}
           <span className="privacy-note">Your video is processed locally in this browser and never uploaded or stored. No account or backend is involved.</span>
         </div>
         {error && <p className="error-message" role="alert">{error}</p>}

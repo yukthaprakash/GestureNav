@@ -38,6 +38,10 @@ The camera prompt appears only after clicking **Enable camera and begin**. Produ
 
 Every demo section also has visible buttons, and **Arrow Up/Down/Left/Right always provide a full keyboard fallback** when a visitor has no camera or prefers not to use one.
 
+## Adaptive Accessibility
+
+Choose **Calibrate my gestures** during startup to capture three comfortable samples for pinch, open palm, swipe travel, arm raise, and head tilt. The resulting threshold profile is saved only in this browser under `localStorage`; **Reset to defaults** removes it. During a session, sustained low hand confidence can slightly loosen sensitivity, and the app suggests arm or head gestures when those modalities are working better than hand tracking.
+
 ## Privacy and Device Support
 
 - Camera processing is local to the browser using MediaPipe Tasks Vision.

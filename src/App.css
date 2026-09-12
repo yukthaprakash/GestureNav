@@ -37,9 +37,26 @@ h1 { font-size: clamp(3.5rem, 8vw, 8.2rem); margin: 0 0 28px; max-width: 850px; 
 .gesture-guide strong { font-family: var(--display); font-size: 1.5rem; }
 .gesture-guide span { color: #6c6b65; font-size: .85rem; }
 .active-console { align-items: start; }
+.console-copy { min-width: 0; }
 .active-console h1 { font-size: clamp(3rem, 6vw, 6rem); }
 .last-action { border-left: 3px solid #a9e66f; margin-top: 28px; padding: 10px 14px; }
 .error-message { color: #a33c25; margin-top: 20px; }
+.adaptive-notice, .fallback-suggestion { border-left: 3px solid #e5bd35; font-size: .9rem; margin-top: 24px; padding: 10px 14px; }
+.fallback-suggestion { border-color: #5d91aa; }
+.profile-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 16px; margin-top: 28px; }
+.text-button { background: transparent; border: 0; color: #6c6b65; cursor: pointer; font: .7rem var(--mono); padding: 8px 0; text-decoration: underline; text-underline-offset: 3px; text-transform: uppercase; }
+.text-button:hover, .text-button:focus-visible { color: #252525; }
+.calibration-panel { display: contents; }
+.calibration-panel > div:first-child { grid-column: 1; }
+.calibration-card { background: #fffdf8; border: 1px solid #252525; padding: 26px; }
+.calibration-card h2 { font-size: clamp(2rem, 4vw, 3.5rem); margin: 0 0 15px; }
+.calibration-card p { line-height: 1.45; }
+.calibration-progress { display: flex; gap: 6px; margin-bottom: 28px; }
+.calibration-progress span { background: #d8d5ca; height: 5px; flex: 1; }
+.calibration-progress span.is-active { background: #a9e66f; }
+.calibration-reading { border-top: 1px solid #d8d5ca; display: block; font: .7rem var(--mono); margin-top: 24px; padding-top: 14px; text-transform: uppercase; }
+.calibration-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
+.calibration-message { color: #6c6b65; font-size: .82rem; margin-top: 18px; }
 .tracking-card { min-width: 0; }
 .video-frame { aspect-ratio: 16 / 10; background: #252525; overflow: hidden; position: relative; }
 .video-frame video { display: block; height: 100%; object-fit: cover; transform: scaleX(-1); width: 100%; }

@@ -5,10 +5,11 @@ import {
   HandLandmarker,
   PoseLandmarker,
 } from '@mediapipe/tasks-vision'
-import { classifyFaceGesture, isLookingAway } from '../lib/faceGestures'
-import { classifyHandGesture, SwipeDetector } from '../lib/handGestures'
-import { classifyPoseGesture } from '../lib/poseGestures'
-import type { FaceGesture, GestureEvent, HandGesture, PoseGesture, TrackingStatus } from '../lib/types'
+import { classifyFaceGesture, getHeadTiltDegrees, isLookingAway } from '../lib/faceGestures'
+import { classifyHandGesture, getHandExtensionRatio, getPinchDistance, SwipeDetector } from '../lib/handGestures'
+import { classifyPoseGesture, getPoseRaiseRatio } from '../lib/poseGestures'
+import { DEFAULT_CALIBRATION_PROFILE } from '../lib/calibration'
+import type { CalibrationProfile, FaceGesture, GestureEvent, HandGesture, PoseGesture, TrackingStatus } from '../lib/types'
 
 // Keep this aligned with the installed @mediapipe/tasks-vision package version.
 const WASM_PATH = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.0.1/wasm'
@@ -27,6 +28,17 @@ export type TrackingSnapshot = {
   isPaused: boolean
 }
 
+export type TrackingMetrics = {
+  pinchDistance: number | null
+  handExtensionRatio: number | null
+  swipeDistance: number
+  poseRaiseRatio: number | null
+  headTiltDegrees: number | null
+  handConfidence: number | null
+  facePresent: boolean
+  posePresent: boolean
+}
+
 const INITIAL_SNAPSHOT: TrackingSnapshot = {
   hands: [],
   pose: 'none',
@@ -34,18 +46,32 @@ const INITIAL_SNAPSHOT: TrackingSnapshot = {
   isPaused: false,
 }
 
+const INITIAL_METRICS: TrackingMetrics = {
+  pinchDistance: null,
+  handExtensionRatio: null,
+  swipeDistance: 0,
+  poseRaiseRatio: null,
+  headTiltDegrees: null,
+  handConfidence: null,
+  facePresent: false,
+  posePresent: false,
+}
+
 export function useMultiTracking(
   videoRef: React.RefObject<HTMLVideoElement | null>,
   onGesture: (event: GestureEvent) => void,
   enabled = true,
+  profile: CalibrationProfile = DEFAULT_CALIBRATION_PROFILE,
 ) {
   const [status, setStatus] = useState<TrackingStatus>('idle')
   const [error, setError] = useState<string | null>(null)
   const [snapshot, setSnapshot] = useState<TrackingSnapshot>(INITIAL_SNAPSHOT)
+  const [metrics, setMetrics] = useState<TrackingMetrics>(INITIAL_METRICS)
+  const [adaptiveNotice, setAdaptiveNotice] = useState<string | null>(null)
+  const [fallbackSuggestion, setFallbackSuggestion] = useState<string | null>(null)
   const callbackRef = useRef(onGesture)
   const lastGestureRef = useRef<{ action: string; timestamp: number } | null>(null)
   const lookAwayStartedRef = useRef<number | null>(null)
-  const swipeDetectorRef = useRef(new SwipeDetector())
 
   useEffect(() => {
     callbackRef.current = onGesture
@@ -55,6 +81,9 @@ export function useMultiTracking(
     if (!enabled) {
       setStatus('idle')
       setSnapshot(INITIAL_SNAPSHOT)
+      setMetrics(INITIAL_METRICS)
+      setAdaptiveNotice(null)
+      setFallbackSuggestion(null)
       return
     }
 
@@ -64,6 +93,11 @@ export function useMultiTracking(
     let handLandmarker: HandLandmarker | null = null
     let poseLandmarker: PoseLandmarker | null = null
     let faceLandmarker: FaceLandmarker | null = null
+    const effectiveProfile = { ...profile }
+    const swipeDetector = new SwipeDetector(500, effectiveProfile.swipeDistanceThreshold)
+    let lowConfidenceStarted: number | null = null
+    let missingHandsStarted: number | null = null
+    let sensitivityAdjusted = false
 
     const emit = (event: GestureEvent) => {
       const lastGesture = lastGestureRef.current
@@ -142,7 +176,15 @@ export function useMultiTracking(
 
           const timestamp = performance.now()
           const handResult = handLandmarker?.detectForVideo(currentVideo, timestamp)
-          const hands = handResult?.landmarks.map(classifyHandGesture) ?? []
+          const handLandmarks = handResult?.landmarks[0]
+          const confidenceScores = handResult?.handedness.flatMap((categories) => categories.map((category) => category.score ?? 0)) ?? []
+          const handConfidence = confidenceScores.length
+            ? confidenceScores.reduce((sum, score) => sum + score, 0) / confidenceScores.length
+            : null
+          const hands = handResult?.landmarks.map((landmarks) => classifyHandGesture(landmarks, {
+            pinchThreshold: effectiveProfile.pinchThreshold,
+            extensionRatio: effectiveProfile.handExtensionRatio,
+          })) ?? []
           const poseResult = frameCount % POSE_EVERY_N_FRAMES === 0
             ? poseLandmarker?.detectForVideo(currentVideo, timestamp)
             : undefined
@@ -153,16 +195,54 @@ export function useMultiTracking(
           if (hands.includes('open-palm')) emit({ action: 'scroll-down', source: 'hand', label: 'Open palm: scroll down', timestamp })
           if (hands.includes('fist')) emit({ action: 'scroll-up', source: 'hand', label: 'Fist: scroll up', timestamp })
           if (hands.includes('pinch')) emit({ action: 'select', source: 'hand', label: 'Pinch: select', timestamp })
-          const swipe = handResult?.landmarks[0]?.[0]
-            ? swipeDetectorRef.current.update(handResult.landmarks[0][0].x, timestamp)
+          const swipe = handLandmarks?.[0]
+            ? swipeDetector.update(handLandmarks[0].x, timestamp)
             : null
           if (swipe === 'swipe-left') emit({ action: 'next-section', source: 'hand', label: 'Swipe left', timestamp })
           if (swipe === 'swipe-right') emit({ action: 'previous-section', source: 'hand', label: 'Swipe right', timestamp })
 
-          const pose = poseResult?.landmarks[0] ? classifyPoseGesture(poseResult.landmarks[0]) : snapshot.pose
+          const pose = poseResult?.landmarks[0] ? classifyPoseGesture(poseResult.landmarks[0], effectiveProfile.raiseThreshold) : snapshot.pose
           const faceLandmarks = faceResult?.faceLandmarks[0]
-          const face = faceLandmarks ? classifyFaceGesture(faceLandmarks) : snapshot.face
-          const lookingAway = faceLandmarks ? isLookingAway(faceLandmarks) : false
+          const face = faceLandmarks ? classifyFaceGesture(faceLandmarks, {
+            tiltThresholdDeg: effectiveProfile.tiltThresholdDeg,
+            yawZThreshold: effectiveProfile.yawZThreshold,
+            yawNoseThreshold: effectiveProfile.yawNoseThreshold,
+          }) : snapshot.face
+
+          if (handConfidence !== null && handConfidence < 0.55) {
+            lowConfidenceStarted ??= timestamp
+          } else {
+            lowConfidenceStarted = null
+          }
+          if (lowConfidenceStarted !== null && timestamp - lowConfidenceStarted > 4000 && !sensitivityAdjusted) {
+            effectiveProfile.pinchThreshold *= 1.08
+            effectiveProfile.handExtensionRatio *= 0.94
+            effectiveProfile.swipeDistanceThreshold *= 0.9
+            swipeDetector.setDistanceThreshold(effectiveProfile.swipeDistanceThreshold)
+            sensitivityAdjusted = true
+            setAdaptiveNotice('Adjusted sensitivity for you')
+          }
+          if (!handLandmarks && (poseResult?.landmarks[0] || faceLandmarks)) {
+            missingHandsStarted ??= timestamp
+          } else {
+            missingHandsStarted = null
+            setFallbackSuggestion(null)
+          }
+          if (missingHandsStarted !== null && timestamp - missingHandsStarted > 3000) {
+            setFallbackSuggestion('Hand tracking is low. Try raising an arm or tilting your head instead.')
+          }
+
+          setMetrics({
+            pinchDistance: handLandmarks ? getPinchDistance(handLandmarks) : null,
+            handExtensionRatio: handLandmarks ? getHandExtensionRatio(handLandmarks) : null,
+            swipeDistance: swipeDetector.getDistance(),
+            poseRaiseRatio: poseResult?.landmarks[0] ? getPoseRaiseRatio(poseResult.landmarks[0]) : null,
+            headTiltDegrees: faceLandmarks ? getHeadTiltDegrees(faceLandmarks) : null,
+            handConfidence,
+            facePresent: Boolean(faceLandmarks),
+            posePresent: Boolean(poseResult?.landmarks[0]),
+          })
+          const lookingAway = faceLandmarks ? isLookingAway(faceLandmarks, effectiveProfile.yawZThreshold, effectiveProfile.yawNoseThreshold) : false
           if (lookingAway) {
             lookAwayStartedRef.current ??= timestamp
           } else {
@@ -209,7 +289,7 @@ export function useMultiTracking(
       faceLandmarker?.close()
       if (videoRef.current) videoRef.current.srcObject = null
     }
-  }, [enabled, videoRef])
+  }, [enabled, profile, videoRef])
 
-  return { status, error, snapshot }
+  return { status, error, snapshot, metrics, adaptiveNotice, fallbackSuggestion }
 }

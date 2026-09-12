@@ -25,3 +25,13 @@ export type PoseGesture = 'left-arm-raised' | 'right-arm-raised' | 'none'
 export type FaceGesture = 'tilt-left' | 'tilt-right' | 'look-away' | 'none'
 
 export type Landmark = NormalizedLandmark
+
+export type CalibrationProfile = {
+  pinchThreshold: number
+  handExtensionRatio: number
+  swipeDistanceThreshold: number
+  raiseThreshold: number
+  tiltThresholdDeg: number
+  yawZThreshold: number
+  yawNoseThreshold: number
+}

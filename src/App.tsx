@@ -1,15 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
 import './App.css'
 import { DemoPage } from './components/DemoPage'
+import { CalibrationPanel } from './components/CalibrationPanel'
 import { GestureOverlay } from './components/GestureOverlay'
 import { Onboarding } from './components/Onboarding'
 import { useMultiTracking } from './hooks/useMultiTracking'
 import { ACTION_LABELS } from './lib/actionLabels'
-import type { ActionType, GestureEvent } from './lib/types'
+import { loadCalibrationProfile, resetCalibrationProfile, saveCalibrationProfile } from './lib/calibration'
+import type { ActionType, CalibrationProfile, GestureEvent } from './lib/types'
 
 function App() {
   const [started, setStarted] = useState(false)
   const [cameraEnabled, setCameraEnabled] = useState(true)
+  const [calibrating, setCalibrating] = useState(false)
+  const [calibrationProfile, setCalibrationProfile] = useState<CalibrationProfile>(loadCalibrationProfile)
   const [lastEvent, setLastEvent] = useState<GestureEvent | null>(null)
   const [isMobile] = useState(() => window.matchMedia('(max-width: 760px)').matches || navigator.maxTouchPoints > 1)
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -44,11 +48,28 @@ function App() {
     performAction(event.action)
   }
 
-  const { status, error, snapshot } = useMultiTracking(videoRef, handleGesture, started && cameraEnabled)
+  const { status, error, snapshot, metrics, adaptiveNotice, fallbackSuggestion } = useMultiTracking(videoRef, handleGesture, started && cameraEnabled, calibrationProfile)
 
   const onAction = (action: 'scroll-up' | 'scroll-down' | 'select') => {
     performAction(action)
     setLastEvent({ action, source: 'system', label: ACTION_LABELS[action], timestamp: performance.now() })
+  }
+
+  const startCalibration = () => {
+    setCameraEnabled(true)
+    setStarted(true)
+    setCalibrating(true)
+  }
+
+  const finishCalibration = (profile: CalibrationProfile) => {
+    saveCalibrationProfile(profile)
+    setCalibrationProfile(profile)
+    setCalibrating(false)
+  }
+
+  const clearCalibration = () => {
+    const defaults = resetCalibrationProfile()
+    setCalibrationProfile(defaults)
   }
 
   useEffect(() => {
@@ -81,15 +102,23 @@ function App() {
         <div className="header-status"><span className="status-dot" />{started && cameraEnabled ? status : 'camera off'}</div>
       </header>
       <div id="top" className="top-grid">
-        {!started ? <Onboarding onStart={() => { setCameraEnabled(true); setStarted(true) }} error={error} isMobile={isMobile} /> : (
+        {!started ? <Onboarding onStart={() => { setCameraEnabled(true); setStarted(true) }} onCalibrate={startCalibration} error={error} isMobile={isMobile} /> : (
           <section className="active-console" aria-labelledby="console-title">
-            <div>
+            <div className="console-copy">
+              {calibrating ? <CalibrationPanel metrics={metrics} profile={calibrationProfile} onComplete={finishCalibration} onCancel={() => setCalibrating(false)} /> : <>
               <p className="kicker">Control surface</p>
               <h1 id="console-title">The page is listening.</h1>
               <p className="lede">Use your body to explore the guide below. Keyboard arrows always work too.</p>
               {error && <p className="error-message" role="alert">{error}</p>}
               {error && <button className="secondary-button" type="button" onClick={() => setStarted(false)}>Return to camera setup</button>}
+              {adaptiveNotice && <p className="adaptive-notice" role="status">{adaptiveNotice}</p>}
+              {fallbackSuggestion && <p className="fallback-suggestion" role="status">{fallbackSuggestion}</p>}
               {lastEvent && <p className="last-action" aria-live="polite">Last action: <strong>{lastEvent.label}</strong></p>}
+              <div className="profile-actions">
+                <button className="secondary-button" type="button" onClick={() => setCalibrating(true)}>Recalibrate gestures</button>
+                <button className="text-button" type="button" onClick={clearCalibration}>Reset to defaults</button>
+              </div>
+              </>}
             </div>
             <GestureOverlay
               videoRef={videoRef}
