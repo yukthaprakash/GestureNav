@@ -150,7 +150,9 @@ export function useMultiTracking(
             ? faceLandmarker?.detectForVideo(currentVideo, timestamp)
             : undefined
 
-          if (hands.includes('pinch')) emit({ action: 'select', source: 'hand', label: 'Pinch', timestamp })
+          if (hands.includes('open-palm')) emit({ action: 'scroll-down', source: 'hand', label: 'Open palm: scroll down', timestamp })
+          if (hands.includes('fist')) emit({ action: 'scroll-up', source: 'hand', label: 'Fist: scroll up', timestamp })
+          if (hands.includes('pinch')) emit({ action: 'select', source: 'hand', label: 'Pinch: select', timestamp })
           const swipe = handResult?.landmarks[0]?.[0]
             ? swipeDetectorRef.current.update(handResult.landmarks[0][0].x, timestamp)
             : null

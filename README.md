@@ -2,105 +2,81 @@
 
 **Navigate the web with your body.**
 
-GestureNav is a computer-vision accessibility web app that lets you control on-screen navigation using webcam-based hand gestures, arm/pose gestures, and face/gaze tracking — no mouse, no touch, no server. Everything runs entirely client-side in your browser.
+GestureNav is a computer-vision accessibility web app that turns webcam-based hand, arm, and head movements into page navigation. It has no backend: MediaPipe runs entirely in your browser, and camera frames are never uploaded or stored.
 
-🔗 **Live demo:** [Add your deployed URL here, e.g. https://gesturenav.yourdomain.com]
+## Try It
 
----
+The repository is the source of truth: [open GestureNav on GitHub](https://github.com/yukthaprakash/GestureNav).
 
-## ✨ What it does
-
-GestureNav watches your webcam feed in real time and turns natural body movements into page navigation actions — scrolling, jumping between sections, and clicking — using on-device machine learning. No video is ever uploaded or stored anywhere; all processing happens locally in your browser using [MediaPipe](https://developers.google.com/mediapipe).
-
-## 🖐️ Gesture guide
-
-| Gesture | Action |
-|---|---|
-| ✋ Open palm | *(describe what this does, e.g. Pause/Resume tracking)* |
-| ✊ Fist | *(describe action, e.g. Click / Select)* |
-| 🤏 Pinch | Click |
-| 👋 Swipe hand left / right | Previous / Next section |
-| 🙋 Raise right arm | Next section |
-| 🙋 Raise left arm | Previous section |
-| 🙂 Tilt head | *(describe action, e.g. Scroll up/down)* |
-| 👀 Look away (1.5s+) | Pause gesture tracking |
-
-> Don't have a camera, or prefer not to use one? **Keyboard arrow keys always work** as a full fallback for every action above.
-
-## 🚀 Getting started
-
-### Try it online
-Just open the [live demo link](#) in a modern desktop browser (Chrome, Firefox, or Safari) and click **"Enable camera and begin."** Grant camera access when prompted — that's it.
-
-### Run it locally
+To try the working demo locally, clone the project, start Vite, then open the clickable link below:
 
 ```bash
-# Clone the repo
 git clone https://github.com/yukthaprakash/GestureNav.git
 cd GestureNav
-
-# Install dependencies
 npm install
-
-# Start the dev server
 npm run dev
 ```
 
-Then open `http://localhost:5173` in your browser.
+**[Open the local GestureNav demo](http://localhost:5173/)** · [Open debug view](http://localhost:5173/?debug=true)
 
-### Build for production
+The camera prompt appears only after clicking **Enable camera and begin**. Production deployments must use HTTPS for camera access.
+
+## Gesture Guide
+
+| Gesture | Action |
+| --- | --- |
+| Open palm | Scroll down |
+| Fist | Scroll up |
+| Pinch | Select the focused control |
+| Swipe hand left | Next section |
+| Swipe hand right | Previous section |
+| Raise right arm | Next section |
+| Raise left arm | Previous section |
+| Tilt head left | Scroll up |
+| Tilt head right | Scroll down |
+| Look away for 1.5+ seconds | Pause gesture actions |
+
+Every demo section also has visible buttons, and **Arrow Up/Down/Left/Right always provide a full keyboard fallback** when a visitor has no camera or prefers not to use one.
+
+## Privacy and Device Support
+
+- Camera processing is local to the browser using MediaPipe Tasks Vision.
+- No video, images, gesture data, accounts, or analytics are sent to a server.
+- **Turn camera off** stops the media tracks, releases the camera indicator, pauses inference, and shows a clear camera-off state.
+- Permission denial and missing cameras show keyboard instructions instead of a blank experience.
+- The layout is responsive, but a desktop or laptop with a webcam is the best experience. Mobile visitors can use keyboard or on-screen controls.
+
+## Development
 
 ```bash
+npm install
+npx tsc --noEmit
 npm run build
+npm run dev
 ```
 
-The optimized static build will be output to the `dist/` folder, ready to deploy anywhere (Vercel, Netlify, GitHub Pages, etc.).
+Use `?debug=true` to show the mirrored canvas debug overlay. The production build is written to `dist/` and can be deployed as a static site to Vercel, Netlify, or another HTTPS host.
 
-## 🔒 Privacy
+## Tech Stack
 
-Your camera feed is processed **entirely in your browser**, in real time, using on-device machine learning models. **No video, image, or gesture data is ever sent to a server, stored, or uploaded anywhere.** This app has no backend — it's a fully static site. You can turn your camera off at any time using the on-screen toggle.
+- React, TypeScript, and Vite
+- [`@mediapipe/tasks-vision`](https://www.npmjs.com/package/@mediapipe/tasks-vision)
+- HandLandmarker, PoseLandmarker, and FaceLandmarker
+- Plain CSS and HTML5 Canvas
 
-## 🛠️ Tech stack
+## Project Structure
 
-- **React + TypeScript + Vite** — app framework and build tooling
-- **[@mediapipe/tasks-vision](https://www.npmjs.com/package/@mediapipe/tasks-vision)** — HandLandmarker, PoseLandmarker, and FaceLandmarker for real-time, on-device gesture detection
-- **Plain CSS** — no UI framework, custom design system
-- **HTML5 Canvas** — debug overlay rendering
-- **Vercel** — static hosting and deployment
-
-## 📁 Project structure
-
-```
+```text
 src/
-├── lib/
-│   ├── types.ts            # Shared types (ActionType, InputSource, TrackingStatus)
-│   ├── handGestures.ts     # Hand gesture classification (palm, fist, pinch, swipe)
-│   ├── poseGestures.ts     # Arm-raise gesture classification
-│   └── faceGestures.ts     # Head tilt & look-away detection
-├── hooks/
-│   └── useMultiTracking.ts # Core tracking hook — loads models, runs detection loop
-├── components/
-│   ├── GestureOverlay.tsx  # Webcam preview, debug overlay, status panel
-│   └── DemoPage.tsx        # Scrollable demo page to navigate via gestures
-├── App.tsx                 # Wires tracking output to page actions
-└── App.css                 # Styling
+├── lib/                    # Pure gesture classifiers and shared types
+├── hooks/useMultiTracking.ts
+├── components/             # Onboarding, overlay, and demo sections
+├── App.tsx                 # Gesture and keyboard action wiring
+└── App.css                 # Responsive visual system
 ```
 
-## ⚙️ Browser & device support
+## Contributing
 
-- **Best experience:** Desktop/laptop with a webcam, on Chrome, Firefox, or Safari (latest versions)
-- **No webcam?** The app detects this and falls back to full keyboard-arrow navigation automatically
-- **Camera permission denied?** A clear fallback message and keyboard instructions appear immediately — nothing breaks
-- **Mobile:** *(update this line based on final behavior — either "fully responsive" or "shows a 'best viewed on desktop' message")*
+Issues and pull requests are welcome. Gesture thresholds can be tuned in `src/lib/` and the tracking cadence can be tuned in `src/hooks/useMultiTracking.ts`.
 
-## 🤝 Contributing
-
-Issues and pull requests are welcome. If you spot a gesture that misfires in certain lighting conditions or on certain devices, please open an issue with details — gesture thresholds are tunable in `src/lib/*.ts` and `src/hooks/useMultiTracking.ts`.
-
-## 📄 License
-
-*(Add your license here — e.g. MIT)*
-
----
-
-Built with ♿ accessibility in mind — because navigating the web shouldn't require a mouse.
+Built with accessibility in mind: navigating the web should not require a mouse.
